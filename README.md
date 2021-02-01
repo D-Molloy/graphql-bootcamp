@@ -67,3 +67,15 @@ query{
   }
 }
 ```
+
+
+##  Type definitions === application schema
+##  Resolvers -  a set of functions that return different parts of data available in schema
+
+## 5 Main Scalar (Primitive) types
+A GraphQL object type has a name and fields, but at some point those fields have to resolve to some concrete data. That's where the scalar types come in: they represent the leaves of the query.
+- String
+- Boolean
+- Int
+- Float
+- ID
