@@ -79,3 +79,7 @@ A GraphQL object type has a name and fields, but at some point those fields have
 - Int
 - Float
 - ID
+
+## Custom Types
+Define the shape of data by including it in the typeDefs
+- If returning a non-scalar value (like a custom type), you must specify a selection set to get down to scalar values

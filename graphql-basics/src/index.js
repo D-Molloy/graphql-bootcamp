@@ -1,34 +1,31 @@
 import { GraphQLServer } from 'graphql-yoga';
 
-// type definitions - application schema
+// scalar types - String, Int, Boolean, Float, ID (similar to string)
+//  ! - required return value.  
+// gpa doesn't have a required return value so it can be either a float OR null
 const typeDefs = `
   type Query {
-    id:ID!
+    me: User!
+  }
+
+  type User{
+    id: ID!
     name: String!
-    age: Int!
-    employed: Boolean!
-    gpa: Float
+    email: String!
+    age:Int
   }
 `
 
 // resolvers -  a set of functions that return different parts of data available in schema
 const resolvers = {
   Query: {
-    id() {
-      return "abc123"
-    },
-    name() {
-      return "denis"
-    },
-    age() {
-      return 41
-    },
-    employed() {
-      return true
-    },
-    gpa() {
-      return null
-    },
+    me() {
+      return {
+        id: "123456",
+        name: "Denis",
+        email: "denis@test.com"
+      }
+    }
   }
 }
 
