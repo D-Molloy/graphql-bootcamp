@@ -5,6 +5,7 @@ import { GraphQLServer } from 'graphql-yoga';
 // gpa doesn't have a required return value so it can be either a float OR null
 const typeDefs = `
   type Query {
+    greeting(name: String): String!
     me: User!
   }
 
@@ -19,6 +20,10 @@ const typeDefs = `
 // resolvers -  a set of functions that return different parts of data available in schema
 const resolvers = {
   Query: {
+    greeting(parent, args) {
+      console.log('args', args)
+      return `HELLO${args.name ? " " + args.name : ""}!`
+    },
     me() {
       return {
         id: "123456",
