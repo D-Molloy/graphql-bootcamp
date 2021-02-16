@@ -16,6 +16,7 @@ https://graphql-demo.mead.io/
 
 Schema in graphiql - shows queries and return types
 `course:String!` - ! - type of value will always be returned (not null)
+- leaving off means the field is non nullable
 
 ### Query - fetching data
 ```
@@ -83,3 +84,37 @@ A GraphQL object type has a name and fields, but at some point those fields have
 ## Custom Types
 Define the shape of data by including it in the typeDefs
 - If returning a non-scalar value (like a custom type), you must specify a selection set to get down to scalar values
+
+## Operation Arguments
+- Passing data from client to server (creating or filtering data)
+### 4 arguments passed to all resolvers
+- parent - hierarchical structure of query 
+- args -get the args passed from the client
+- ctx - contextual info e.g. is the user logged in
+- info - 
+
+client
+```
+query{}
+  greeting(name: "Denis")
+}
+```
+server
+```
+const typeDefs = `
+  type Query {
+    greeting(name: String): String!
+  } 
+`
+
+const resolvers = {
+  Query: {
+    greeting(parent, args) {
+      return `Hello${args.name ? " " + args.name : ""}!`
+    },
+  }
+}
+
+```
+
+### Working with Arrays of Scalar Types
