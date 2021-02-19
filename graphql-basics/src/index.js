@@ -1,5 +1,5 @@
 import { GraphQLServer } from 'graphql-yoga';
-
+import { v4 as uuidv4 } from 'uuid';
 // Demo data
 const users = [
   {
@@ -84,6 +84,13 @@ const typeDefs = `
     comments:[Comment!]!
   }
 
+  type Mutation {
+    createUser(name:String!, email:String!, age:Int ):User!
+    createPost(title:String!, body:String!, published: Boolean!, author:ID!):Post!
+    createComment(text:String!, author:ID!, post: ID!):Comment!
+  }
+
+
   type User{
     id: ID!
     name: String!
@@ -154,6 +161,53 @@ const resolvers = {
     }
 
   },
+  Mutation: {
+    createUser(parent, args, ctx, info) {
+      const { name, email, age } = args
+      const emailTaken = users.some(user => user.email === args.email)
+      if (emailTaken) {
+        throw new Error("Email already registered.")
+      }
+      const user = {
+        id: uuidv4(),
+        ...args
+      }
+      users.push(user)
+      return user
+    },
+    createPost(parent, args, ctx, info) {
+      const authorExists = users.some(user => user.id === args.author)
+      if (!authorExists) {
+        throw new Error("Author not found")
+      }
+      const post = {
+        id: uuidv4(),
+        ...args
+      }
+      posts.push(post)
+      return post
+    },
+    createComment(parent, args, ctx, info) {
+      const authorExists = users.some(user => user.id === args.author)
+      const postExists = posts.some(post => post.id === args.post && post.published)
+      if (!authorExists) {
+        throw new Error("Author doesn't exist")
+      }
+      if (!postExists) {
+        throw new Error("Post doesn't exist")
+      }
+
+      const comment = {
+        id: uuidv4(),
+        ...args
+      }
+
+      comments.push(comment)
+
+      return comment
+
+    }
+  },
   // need to setup a method to resolve every field that  inks to another type
   Post: {
     // called for each Post
@@ -167,7 +221,7 @@ const resolvers = {
   },
   User: {
     posts(parent, args, ctx, info) {
-      // information about the Post lives in the parent arg
+      // information about the User lives in the parent arg
       return posts.filter((post) => post.author === parent.id)
     },
     comments(parent, args, ctx, info) {
@@ -176,7 +230,7 @@ const resolvers = {
   },
   Comment: {
     author(parent, args, ctx, info) {
-      // information about the Post lives in the parent arg
+      // information about the Comment lives in the parent arg
       return users.find((user) => user.id === parent.author)
     },
     post(parent, args, ctx, info) {
