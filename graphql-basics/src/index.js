@@ -1,7 +1,7 @@
 import { GraphQLServer } from 'graphql-yoga';
 import { v4 as uuidv4 } from 'uuid';
 // Demo data
-const users = [
+let users = [
   {
     id: "1",
     name: "Denis",
@@ -20,7 +20,7 @@ const users = [
     age: 0
   },
 ]
-const posts = [
+let posts = [
   {
     id: "1",
     title: "My first post",
@@ -43,7 +43,7 @@ const posts = [
     author: "3"
   },
 ]
-const comments = [
+let comments = [
   {
     id: "1",
     text: "cool story",
@@ -85,9 +85,29 @@ const typeDefs = `
   }
 
   type Mutation {
-    createUser(name:String!, email:String!, age:Int ):User!
-    createPost(title:String!, body:String!, published: Boolean!, author:ID!):Post!
-    createComment(text:String!, author:ID!, post: ID!):Comment!
+    createUser(data: CreateUserInput!):User!
+    deleteUser(id: ID!): User!
+    createPost(data: CreatePostInput!):Post!
+    deletePost(id: ID!): Post!
+    createComment(data:CreateCommentInput!):Comment!
+    deleteComment(id: ID!): Comment!
+  }
+
+  input CreateUserInput {
+    name:String! 
+    email:String! 
+    age:Int
+  }
+  input CreatePostInput {
+    title:String! 
+    body:String! 
+    published: Boolean! 
+    author:ID!
+  }
+  input CreateCommentInput {
+    text:String! 
+    author:ID! 
+    post: ID!
   }
 
 
@@ -122,21 +142,6 @@ const typeDefs = `
 // resolvers -  a set of functions that return different parts of data available in schema
 const resolvers = {
   Query: {
-    me() {
-      return {
-        id: "123456",
-        name: "Denis",
-        email: "denis@test.com"
-      }
-    },
-    post() {
-      return {
-        id: "543",
-        title: "Sunday Scaries",
-        body: "Dont be afraid of the week ahead",
-        published: false
-      }
-    },
     users(parent, { query }, ctx, info) {
       if (!query) {
         return users
@@ -164,32 +169,65 @@ const resolvers = {
   Mutation: {
     createUser(parent, args, ctx, info) {
       const { name, email, age } = args
-      const emailTaken = users.some(user => user.email === args.email)
+      const emailTaken = users.some(user => user.email === args.data.email)
       if (emailTaken) {
         throw new Error("Email already registered.")
       }
       const user = {
         id: uuidv4(),
-        ...args
+        ...args.data
       }
       users.push(user)
       return user
     },
+    deleteUser(parent, args, ctx, info) {
+      const userIndex = users.findIndex((user) => user.id === args.id)
+      if (userIndex === -1) {
+        throw new Error("User not found")
+      }
+      // the return array value
+      const deletedUsers = users.splice(userIndex, 1)
+      // remove associated posts and comments
+      // if we delete a post, we have to delete comments for the post
+      posts = posts.filter(post => {
+        const match = post.author === args.id
+        if (match) {
+          //if a comment doesn't belong to the current post, it can stay
+          comments = comments.filter(comment => comment.post !== post.id)
+        }
+        return !match
+      })
+      //removing all comment created user created on this or other posts
+      comments = comments.filter(comment => comment.author !== args.id)
+      return deletedUsers[0]
+    },
     createPost(parent, args, ctx, info) {
-      const authorExists = users.some(user => user.id === args.author)
+      const authorExists = users.some(user => user.id === args.data.author)
       if (!authorExists) {
         throw new Error("Author not found")
       }
       const post = {
         id: uuidv4(),
-        ...args
+        ...args.data
       }
       posts.push(post)
       return post
     },
+    deletePost(parent, args, ctx, info) {
+      //  check if the post exists
+      const postIndex = posts.findIndex(post => post.id === args.id)
+      if (postIndex === -1) {
+        throw new Error("Post not found")
+      }
+      // remove and return the post
+      const [deletedPost] = posts.splice(postIndex, 1)
+      // remove all comments belonging to that post
+      comments = comments.filter(comment => comment.post !== args.id)
+      return deletedPost
+    },
     createComment(parent, args, ctx, info) {
-      const authorExists = users.some(user => user.id === args.author)
-      const postExists = posts.some(post => post.id === args.post && post.published)
+      const authorExists = users.some(user => user.id === args.data.author)
+      const postExists = posts.some(post => post.id === args.data.post && post.published)
       if (!authorExists) {
         throw new Error("Author doesn't exist")
       }
@@ -199,13 +237,23 @@ const resolvers = {
 
       const comment = {
         id: uuidv4(),
-        ...args
+        ...args.data
       }
 
       comments.push(comment)
 
       return comment
 
+    },
+    deleteComment(parent, args, ctx, info) {
+      const commentIndex = comments.findIndex((comment) => comment.id === args.id)
+
+      if (commentIndex === -1) {
+        throw new Error("Comment not found")
+      }
+      const [removedComments] = comments.splice(commentIndex, 1)
+
+      return removedComments
     }
   },
   // need to setup a method to resolve every field that  inks to another type

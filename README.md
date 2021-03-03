@@ -1,7 +1,8 @@
 # GraphQL Bootcamp
 
 # Three Main Operations
-- Query - get data
+- Query - Read data
+- Mutations - Create, Update, Delete
 
 ## Parts of a Graph
 - Types (User/Post/Comment)
@@ -117,4 +118,41 @@ const resolvers = {
 
 ```
 
-### Working with Arrays of Scalar Types
+### Mutations
+- because the return type is User, have to return a selection set (scalar fields)
+```
+mutation{
+  createUser(name:"Denis", email:"denis@test.com"){
+    id
+    name
+    email
+  }
+}
+```
+
+- refactor arguments with `input` types
+```
+  type Mutation {
+    createUser(data: CreateUserInput!):User!
+  }
+
+  input CreateUserInput {
+    name:String! 
+    email:String! 
+    age:Int
+  }
+  ----------------
+  mutation{
+  createUser(data:{
+    name:"Foo", 
+    email:"Foo@test.com",
+    age:30
+  }){
+    id
+    name
+    email
+  }
+}
+```
+- input types must return scalars
+- in the mutations, args must be reference the data object - args.data.name, etc
