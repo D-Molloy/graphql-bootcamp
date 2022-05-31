@@ -142,6 +142,7 @@ mutation{
     age:Int
   }
   ----------------
+  //when querying, define the fields for the input type (CreateUserInput)
   mutation{
   createUser(data:{
     name:"Foo", 
@@ -154,5 +155,81 @@ mutation{
   }
 }
 ```
+- cannot pass types (ie a User type) as an argument to a mutation.  MUST pass input type.
 - input types must return scalars
-- in the mutations, args must be reference the data object - args.data.name, etc
+- in the mutations, args must be reference the data object - args.data.name, etc - because of createUser(data: CreateUserInput!)
+
+
+## Section 4 - Subscriptions
+- queries - fetch data
+- mutations - change data
+- Subscriptions - subscribe to data changes
+- subscriptions use websockets behind the scenes
+- in schema.graphql, the subscription type is setup similar to mutations and queries:
+```
+type Subscription {
+  count:Int!
+}
+```
+- when setting up resolvers, the properties for the subscription have to match up with the subscription name, but the value has to be an object with a 'subscribe' property:
+- the return value is not the value listed in the schema, but 'pubsub.asyncIterator(CHANNEL_NAME)'
+- asyncIterator sets up the channel
+- to publish data:  call 'pubsub.publish(CHANNEL_NAME, VALUE)'
+- publishing data typically occurs inside mutations (e.g. after a comment has been updated)
+```
+const Subscription ={
+    // properties in this object have to match up with the Subscription name defined in the schema
+    // unlike queries and mutations, the value of the subscription needs to be an object
+    count:{
+        subscribe(parent, args, {pubsub}, info){
+            let count = 0;
+            setInterval(()=> {
+                count++
+                // publish - 2 args - 1) name of the channel, an object
+                pubsub.publish("count", {
+                    // this has to match up with the subscription type definition
+                    // name of the subscription and the value returned
+                    count: count
+                })
+            } , 1000)
+
+            // asyncIterator creates the "channel" for the scubscription
+            // arg  - the name of the channel
+            return pubsub.asyncIterator("count")
+        }
+    }
+}
+
+export {Subscription as default};
+```
+
+
+## Section 9 - Fragments
+- fragments are reusable selection sets
+```
+//original
+query{
+  users{
+    id
+    name
+    email
+  }
+}
+
+// create fragment
+// must include 'on' and the type (i.e. User) and include fields in the type
+
+fragment userFields on User{
+  id
+  name
+  email
+}
+
+//updated query
+query{
+  users{
+    ...userFields
+  }
+}
+
+```
